@@ -80,7 +80,7 @@ def get_restart(s):
   f.close()
   return nsave,checkpoint,nint
 
-def process(fname,df=None,executable='PROPhet',np=32):
+def process(fname,df=None,executable='PROPhet',np=32,db=None):
   np = str(np)
   nsave,checkpoint,nint = get_restart(fname)
   valf = convert(fname,'val.dat','FILE')
@@ -117,12 +117,12 @@ def process(fname,df=None,executable='PROPhet',np=32):
   if df is not None:
     df = to_pd(f,t,'train',df=df)
     df = to_pd(f,v,'val',df=df)
-    F_pkl = pkl.load(open('/data/llentz/Charge-Density/no_Phosphate/data/Database.pkl','rb'))
     t = get_net(fname='bfgs_file')
     print(t)
-    F_pkl[os.getcwd()] = {'description':t,'df':df}
-    pkl.dump(F_pkl,open('/data/llentz/codeplayground/new_potential/Database.pkl','wb'))
-    #df.to_hdf('/data/llentz/Charge-Density/no_Phosphate/data/Databas.hdf5',os.getcwd())
+    if db is not None:
+      F_pkl = pkl.load(open(db,'rb'))
+      F_pkl[os.getcwd()] = {'description':t,'df':df}
+    pkl.dump(F_pkl,open(db,'wb'))
     df.to_csv('data.csv')
   else:
     f = open('data.csv','w')
@@ -131,13 +131,14 @@ def process(fname,df=None,executable='PROPhet',np=32):
     to_pd(f,v,'train')
     f.close()
 
-def construct_df(train_name='train.dat',val_file='val.dat',db=):
+def construct_df(j):
+  if j is not None:
+    _ = pd.read_json(j)
+    _.set_index('location',inplace=True)
+    return _
+  else:
+    raise ValueError('json file does not exist',j)
   
-
-df = pd.read_json('/data/llentz/Charge-Density/no_Phosphate/Sampling/all.json')
-df['target'] = None
-df['prediction'] = None
-df['train'] = None
-df.set_index('location',inplace=True)
-d = process('bfgs_file',df=df,executable='PROPhet_nosymm')
-exit()
+if __name__ == "__main__":
+  df = construct_df('/data/llentz/codeplayground/data/all.json')
+  d = process('bfgs_file',df=df,executable='PROPhet',db='/data/llentz/codeplayground/data/Database.pkl')
