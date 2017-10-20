@@ -10,14 +10,12 @@ import os
 import pickle as pkl
 from functions import get_network_info as get_net
 
-def to_pd(f,d_,train,df=None):
+def to_pd(d_,train,df=None,f=None):
   if df is not None:
-    df_ = df.copy()
     for i in d_:
-      df_.loc[i,'target'] = d_[i]['target']
-      df_.loc[i,'prediction'] = d_[i]['prophet']
-      df_.loc[i,'train'] = train
-    return df_
+      df.loc[i,'target'] = d_[i]['target']
+      df.loc[i,'prediction'] = d_[i]['prophet']
+      df.loc[i,'train'] = train
   else:
     for i in d_:
       f.write(','.join([str(zz) for zz in [d_[i]['target'],d_[i]['prophet'],train]]) + '\n')
@@ -80,29 +78,30 @@ def get_restart(s):
   f.close()
   return nsave,checkpoint,nint
 
-def process(fname,df=None,executable='PROPhet',np=32,db=None):
+def process(fname,df=None,executable='PROPhet',np=32,db=None,d=None):
   np = str(np)
   nsave,checkpoint,nint = get_restart(fname)
   valf = convert(fname,'val.dat','FILE')
-  out = open('earlystop.out','w')
   len_ = len(open('val.dat').read().split('\n')[:-1])
   np = str(len_) if len_ < 32 else str(32)
-  d = []
-  out.write('step,rmse,max\n')
-  for i in range(100,int(nint),int(nsave)):
-    if not os.path.isfile(checkpoint + '_' + str(i)):
-      break
-    f = open('val_temp','w')
-    f.write(valf.replace('FILE',checkpoint + '_' + str(i)))
-    f.close()
-    t = os.popen('mpirun -np {np} {prop} -in val_temp -validate'.format(prop=executable,np=np))
-    del_,rmse = analysis(t)
-    d.append((i,rmse,del_))
-    print(i,rmse,del_)
-  d = sorted(d,key=lambda x: x[1])
-  for i in d:
-    out.write(','.join([str(zz) for zz in i]) + '\n')
-  out.close()
+  if d is None:
+    out = open('earlystop.out','w')
+    d = []
+    out.write('step,rmse,max\n')
+    for i in range(100,int(nint),int(nsave)):
+      if not os.path.isfile(checkpoint + '_' + str(i)):
+        break
+      f = open('val_temp','w')
+      f.write(valf.replace('FILE',checkpoint + '_' + str(i)))
+      f.close()
+      t = os.popen('mpirun -np {np} {prop} -in val_temp -validate'.format(prop=executable,np=np))
+      del_,rmse = analysis(t)
+      d.append((i,rmse,del_))
+      print(i,rmse,del_)
+    d = sorted(d,key=lambda x: x[1])
+    for i in d:
+      out.write(','.join([str(zz) for zz in i]) + '\n')
+    out.close()
   f = open('val_temp','w')
   f.write(valf.replace('FILE',checkpoint + '_' + str(d[0][0])))
   f.close()
@@ -112,29 +111,33 @@ def process(fname,df=None,executable='PROPhet',np=32,db=None):
   f.close()
   t = os.popen('mpirun -np {np} {prop} -in train_temp -validate > train.dat.out'.format(prop=executable,np=np)).read()
 
-  t = pm('train.dat.out','train.dat')
-  v = pm('val.dat.out','val.dat')
+  to_pkl(db=db,df=df)
+
+def to_pkl(db=None,fname='bfgs_file',df=None,t_file='train.dat',t_out='train.dat.out',v_file='val.dat',v_out='val.dat.out',f=None):
+  t = pm(t_out,t_file)
+  v = pm(v_out,v_file)
   if df is not None:
-    df = to_pd(f,t,'train',df=df)
-    df = to_pd(f,v,'val',df=df)
+    to_pd(t,'train',df=df)
+    to_pd(v,'val',df=df)
+    df = df.dropna()
     t = get_net(fname='bfgs_file')
-    print(t)
     if db is not None:
       F_pkl = pkl.load(open(db,'rb'))
-      F_pkl[os.getcwd()] = {'description':t,'df':df}
-    pkl.dump(F_pkl,open(db,'wb'))
+      F_pkl[os.getcwd()] = {'description':t,'df':df.T.to_dict()} #storing the dataframe as dict for version control
+      pkl.dump(F_pkl,open(db,'wb'))
     df.to_csv('data.csv')
   else:
-    f = open('data.csv','w')
     f.write('target,prediction,train\n')
-    to_pd(f,t,'train')
-    to_pd(f,v,'train')
-    f.close()
+    to_pd(t,'train',f=f)
+    to_pd(v,'train',f=f)
 
 def construct_df(j):
   if j is not None:
     _ = pd.read_json(j)
     _.set_index('location',inplace=True)
+    _['target'] = None
+    _['prediction'] = None
+    _['train'] = None
     return _
   else:
     raise ValueError('json file does not exist',j)
