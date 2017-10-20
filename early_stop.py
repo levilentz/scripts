@@ -110,15 +110,20 @@ def process(fname,df=None,executable='PROPhet',np=32,db=None,d=None):
   f.write(valf.replace('FILE',checkpoint + '_' + str(d[0][0])).replace('val.dat','train.dat'))
   f.close()
   t = os.popen('mpirun -np {np} {prop} -in train_temp -validate > train.dat.out'.format(prop=executable,np=np)).read()
+  f = open('test_temp','w')
+  f.write(valf.replace('FILE',checkpoint + '_' + str(d[0][0])).replace('val.dat','test.dat'))
+  f.close()
+  t = os.popen('mpirun -np {np} {prop} -in test_temp -validate > test.dat.out'.format(prop=executable,np=np)).read()
+  t_file = ['train.dat','val.dat','test.dat']
+  #t_out = ['train.dat.out','val.dat.out','test.dat.out']
+  #flag = ['train','val','test']
+  to_pkl(db=db,df=df,t_file=t_file)
 
-  to_pkl(db=db,df=df)
-
-def to_pkl(db=None,fname='bfgs_file',df=None,t_file='train.dat',t_out='train.dat.out',v_file='val.dat',v_out='val.dat.out',f=None):
-  t = pm(t_out,t_file)
-  v = pm(v_out,v_file)
+def to_pkl(db=None,fname='bfgs_file',df=None,t_file=['train.dat'],f=None):
   if df is not None:
-    to_pd(t,'train',df=df)
-    to_pd(v,'val',df=df)
+    for c,i in enumerate(t_file):
+      t = pm(i + '.out',i)
+      to_pd(t,i.replace('.dat',''),df=df)
     df = df.dropna()
     t = get_net(fname='bfgs_file')
     if db is not None:
