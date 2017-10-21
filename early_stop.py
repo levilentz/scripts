@@ -146,6 +146,27 @@ def construct_df(j):
     return _
   else:
     raise ValueError('json file does not exist',j)
+
+def split_val(df,val_file='val.dat'):
+  t = open('val.dat').split('\n')[:-1]
+  d = df.ix[t]
+  val_temp = pd.DataFrame()
+  test_temp = pd.DataFrame()
+  for i in d.phase.unique():
+    for j in d[d.phase == i].dopant.unique():
+      v_t = d[(d.phase == i) & (d.dopant == j)]
+      vt = v_t.sample(frac=0.5)
+      tt = v_t.drop(vt.index)
+      val_temp = val_temp.append(vt)
+      test_temp = test_temp.append(tt)
+  f = open('val.dat','w')
+  for i in val_temp.index:
+    f.write(i + '\n')
+  f.close()
+  f = open('test.dat','w')
+  for i in test_temp.index:
+    f.write(i + '\n')
+  f.close()
   
 if __name__ == "__main__":
   df = construct_df('/data/llentz/codeplayground/data/all.json')
