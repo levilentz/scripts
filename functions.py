@@ -63,3 +63,10 @@ def get_network_info(fname='bfgs_file'):
       else:
         d['precondition'] = False
   return d 
+
+def construct_json(*args):
+  t = []
+  for i in args:
+    t_ = json.load(open(i))
+    for j in t_: t.append(j)
+  return t
