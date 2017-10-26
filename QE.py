@@ -152,7 +152,7 @@ class Struct:
       f.write(printstring)
       f.close()
 
-  def return_parms(self):
+  def return_params(self):
     atoms = ''
     for i in self.atoms:
       tmp = [round(x,5) for x in self.atoms[i]]
@@ -230,7 +230,8 @@ class Struct:
       f = open(filestring,'r')
     except:
       print("Cannot open %s" % filestring)
-      sys.exit(1)
+      #sys.exit(1)
+      raise IOError
     linenum = 0
     for i in f:
       if "ERROR" in i.upper():
@@ -412,7 +413,8 @@ class Struct:
       self.to_File(lid)
     except lite.Error:
       print("Unable to insert into the database")
-      sys.exit(3)
+      #sys.exit(3)
+      raise IOError
     finally:
       if con:
         con.commit()
@@ -428,7 +430,8 @@ class Struct:
       self.volume = np.dot(self.lattice['a'],np.cross(self.lattice['b'],self.lattice['c']))
     except:
       print("Lattice undefined")
-      sys.exit(4)
+      raise ValueError
+      #sys.exit(4)
 
   def to_File(self,lid):
     with open(str(lid) + '.json','w') as f:
@@ -536,7 +539,8 @@ def main(command):
     print(test.lattice)
   if "@" not in test.email:
     print("Invalid Email Supplied")
-    sys.exit(5)
+    #sys.exit(5)
+    raise ValueError
   test.to_database()
   test = None
 
