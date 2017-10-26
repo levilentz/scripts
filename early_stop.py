@@ -117,9 +117,10 @@ def process(fname,df=None,executable='PROPhet',np=32,db=None,d=None):
   t_file = ['train.dat','val.dat','test.dat']
   #t_out = ['train.dat.out','val.dat.out','test.dat.out']
   #flag = ['train','val','test']
-  to_pkl(db=db,df=df,t_file=t_file)
+  funct = open(checkpoint + '_' + str(d[0][0])).read()
+  to_pkl(db=db,df=df,t_file=t_file,funct=funct)
 
-def to_pkl(db=None,fname='bfgs_file',df=None,t_file=['train.dat'],f=None):
+def to_pkl(db=None,fname='bfgs_file',df=None,t_file=['train.dat'],f=None,funct=None):
   if df is not None:
     for c,i in enumerate(t_file):
       t = pm(i + '.out',i)
@@ -128,7 +129,7 @@ def to_pkl(db=None,fname='bfgs_file',df=None,t_file=['train.dat'],f=None):
     t = get_net(fname='bfgs_file')
     if db is not None:
       F_pkl = pkl.load(open(db,'rb'))
-      F_pkl[os.getcwd()] = {'description':t,'df':df.T.to_dict()} #storing the dataframe as dict for version control
+      F_pkl[os.getcwd()] = {'description':t,'df':df.T.to_dict(),'functional':funct} #storing the dataframe as dict for version control
       pkl.dump(F_pkl,open(db,'wb'))
     df.to_csv('data.csv')
   else:
@@ -169,5 +170,5 @@ def split_val(df,val_file='val.dat'):
   f.close()
   
 if __name__ == "__main__":
-  df = construct_df('/data/llentz/codeplayground/data/all.json')
+  df = construct_df('/data/llentz/Charge-Density/no_Phosphate/data/all.json')
   d = process('bfgs_file',df=df,executable='PROPhet',db='/data/llentz/codeplayground/data/Database.pkl')
