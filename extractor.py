@@ -43,9 +43,9 @@ run as separate_aimd(fname=QE out file, tempfile = Temporary file used for parsi
       x.File_Process(OUT)
       atoms,cell = x.return_params()
       if cnt == 1: base.File_Process(OUT)
-      displ = []
+      displ = {}
       for zz in base.atoms:
-        displ.append(list(base.atoms[zz]-x.atoms[zz]))
+        displ[zz] = list(base.atoms[zz]-x.atoms[zz])
       t_['str'] = x.print()
       t_['atoms'] = atoms
       t_['cell'] = cell
