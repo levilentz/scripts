@@ -50,6 +50,7 @@ run as separate_aimd(fname=QE out file, tempfile = Temporary file used for parsi
       t_['atoms'] = atoms
       t_['cell'] = cell
       t_['displ'] = displ 
+      t_['energy'] = x.energy
       del x
       Gap = BG(OUT)
       t_['gap'] = Gap.bg
