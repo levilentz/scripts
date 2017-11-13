@@ -62,7 +62,7 @@ class Struct:
   def From_Crystal(self):
     vol = np.sqrt(1 - np.cos(self.angles['alpha']*np.pi/180.)**2 - np.cos(self.angles['beta']*np.pi/180.)**2 - np.cos(self.angles['gamma']*np.pi/180.)**2 + 2*np.cos(self.angles['alpha']*np.pi/180.)*np.cos(self.angles['beta']*np.pi/180.)*np.cos(self.angles['gamma']*np.pi/180.))
     temp1 = [self.norms['a'], self.norms['b']*np.cos(self.angles['gamma']*np.pi/180.), self.norms['c']*np.cos(self.angles['beta']*np.pi/180.)]
-    temp2 = [0,self.norms['b']*np.sin(self.angles['gamma']*np.pi/180.),self.norms['c']*((np.cos(self.angles['alpha']*np.pi/180.)-np.cos(self.angles['beta']*np.pi/180.)*np.cos(self.angles['beta']*np.pi/180.))/np.sin(self.angles['gamma']*np.pi/180.))]
+    temp2 = [0,self.norms['b']*np.sin(self.angles['gamma']*np.pi/180.),self.norms['c']*((np.cos(self.angles['alpha']*np.pi/180.)-np.cos(self.angles['beta']*np.pi/180.)*np.cos(self.angles['gamma']*np.pi/180.))/np.sin(self.angles['gamma']*np.pi/180.))]
     temp3 = [0,0,self.norms['c']*vol/np.sin(self.angles['gamma']*np.pi/180.)]
     conversion = np.vstack((np.asarray(temp1),np.asarray(temp2),np.asarray(temp3))) 
     return conversion
@@ -527,6 +527,22 @@ class Struct:
   
   def __str__(self):
     return self.print()
+  
+  def __eq__(self,other):
+    if type(other) == type(self):
+      diff = []
+      for c,i in enumerate(self.atoms):
+        diff.append(np.linalg.norm(self.atoms[i] - other.atoms[i]))
+      m = np.max(np.abs(diff))
+      if m > 1e-3: return False
+      diff = []
+      for c,i in enumerate(self.lattice): 
+        diff.append(np.linalg.norm(self.lattice[i] - other.lattice[i]))
+      m = np.max(np.abs(diff))
+      if m > 1e-3: return False
+    else: 
+      return False
+    return True
 
 def main(command):
   test = Struct()
