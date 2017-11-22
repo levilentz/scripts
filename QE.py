@@ -532,6 +532,22 @@ class Struct:
   
   def __str__(self):
     return self.print()
+  
+  def __eq__(self,other):
+    if type(other) == type(self):
+      diff = []
+      for c,i in enumerate(self.atoms):
+        diff.append(np.linalg.norm(self.atoms[i] - other.atoms[i]))
+      m = np.max(np.abs(diff))
+      if m > 1e-3: return False
+      diff = []
+      for c,i in enumerate(self.lattice): 
+        diff.append(np.linalg.norm(self.lattice[i] - other.lattice[i]))
+      m = np.max(np.abs(diff))
+      if m > 1e-3: return False
+    else: 
+      return False
+    return True
 
 def main(command):
   test = Struct()
