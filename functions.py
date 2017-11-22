@@ -70,3 +70,29 @@ def construct_json(*args):
     t_ = json.load(open(i))
     for j in t_: t.append(j)
   return t
+
+def rot_dir(theta,dir_ = 'x'):
+  t = np.pi*theta/180
+  s = np.sin
+  c = np.cos
+  if dir_=='x':
+    return np.array([[1,0,0],[0,c(t),-s(t)],[0,s(t),c(t)]])
+  elif dir_=='y':
+    return np.array([[c(t),0,s(t)],[0,1,0],[-s(t),0,c(t)]])
+  elif dir_ == 'z':
+    return np.array([[c(t),-s(t),0],[s(t),c(t),0],[0,0,1]])
+
+def rotate_QE(x,theta,dir_='x'):
+  y = copy.deepcopy(x)
+  rot_matrix = rot_dir(theta,dir_=dir_)
+  l = []
+  for i in y.lattice:
+    l.append(y.lattice[i])
+  l = np.transpose(np.array(l))
+  l = np.dot(rot_matrix,l)
+  for j in y.atoms:
+    y.atoms[j] = np.transpose(np.dot(rot_matrix,np.transpose(y.atoms[j])))
+  t = ['a','b','c']
+  for c,i in enumerate(np.transpose(l)):
+    y.lattice[t[c]] = i
+  return y

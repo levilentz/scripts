@@ -60,12 +60,16 @@ class Struct:
     self.noband = False
 
   def From_Crystal(self):
-    vol = np.sqrt(1 - np.cos(self.angles['alpha']*np.pi/180.)**2 - np.cos(self.angles['beta']*np.pi/180.)**2 - np.cos(self.angles['gamma']*np.pi/180.)**2 + 2*np.cos(self.angles['alpha']*np.pi/180.)*np.cos(self.angles['beta']*np.pi/180.)*np.cos(self.angles['gamma']*np.pi/180.))
-    temp1 = [self.norms['a'], self.norms['b']*np.cos(self.angles['gamma']*np.pi/180.), self.norms['c']*np.cos(self.angles['beta']*np.pi/180.)]
-    temp2 = [0,self.norms['b']*np.sin(self.angles['gamma']*np.pi/180.),self.norms['c']*((np.cos(self.angles['alpha']*np.pi/180.)-np.cos(self.angles['beta']*np.pi/180.)*np.cos(self.angles['beta']*np.pi/180.))/np.sin(self.angles['gamma']*np.pi/180.))]
-    temp3 = [0,0,self.norms['c']*vol/np.sin(self.angles['gamma']*np.pi/180.)]
-    conversion = np.vstack((np.asarray(temp1),np.asarray(temp2),np.asarray(temp3))) 
-    return conversion
+    #vol = np.sqrt(1 - np.cos(self.angles['alpha']*np.pi/180.)**2 - np.cos(self.angles['beta']*np.pi/180.)**2 - np.cos(self.angles['gamma']*np.pi/180.)**2 + 2*np.cos(self.angles['alpha']*np.pi/180.)*np.cos(self.angles['beta']*np.pi/180.)*np.cos(self.angles['gamma']*np.pi/180.))
+    #temp1 = [self.norms['a'], self.norms['b']*np.cos(self.angles['gamma']*np.pi/180.), self.norms['c']*np.cos(self.angles['beta']*np.pi/180.)]
+    #temp2 = [0,self.norms['b']*np.sin(self.angles['gamma']*np.pi/180.),self.norms['c']*((np.cos(self.angles['alpha']*np.pi/180.)-np.cos(self.angles['beta']*np.pi/180.)*np.cos(self.angles['beta']*np.pi/180.))/np.sin(self.angles['gamma']*np.pi/180.))]
+    #temp3 = [0,0,self.norms['c']*vol/np.sin(self.angles['gamma']*np.pi/180.)]
+    #conversion = np.vstack((np.asarray(temp1),np.asarray(temp2),np.asarray(temp3))) 
+    t = []
+    for i in self.lattice:
+      t.append(self.lattice[i])
+    return np.transpose(np.array(t))
+    #return np.linalg.inv(np.transpose(np.array(t)))
   
   def to_Crystal(self):
     self.Normalize()
@@ -114,6 +118,7 @@ class Struct:
     
     
   def CIF(self,filename=""):
+    self.Normalize()
     ciffile = "data_global\n"
     ciffile += "_chemical_name " + self.to_Formula().strip() + "\n"
     for i in ['a','b','c']:
