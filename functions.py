@@ -1,6 +1,7 @@
 
 import numpy as np
 import json
+import copy
 
 def prophet_map(pname,tname):
   '''This is a conversion routine to convert PROPhet out put into a dictionary with the PK being the directory'''
@@ -30,6 +31,25 @@ def prophet_map(pname,tname):
         i = next(f)
       break
   return p_
+
+def prophet_list(pname):
+  try:
+    d_ = open(pname)
+    t = []
+    for i in d_:
+      if '-----------------------' in i:
+        i = next(d_)
+        while len(i.split()) > 0:
+          if len(i.split()) == 5:
+            t_ = i.split()
+            t.append({'prediction':float(t_[1]),'target':float(t_[2]),'natom':int(t_[3]),'train':t_[4]})
+          i = next(d_)
+    d_.close()
+    return t
+  except:
+    print('error opening ',pname)
+    return 0
+       
 
 def temperature(scf_file,wd):
   '''old routine for AIMD'''
