@@ -239,10 +239,13 @@ class Struct:
       raise IOError
     linenum = 0
     for i in f:
+      i = i.lower()
       if "ERROR" in i.upper():
         print("There is an error in this calculation")
         #sys.exit(2)
       if linenum < 1000:
+        if 'nat' in i.lower():
+          self.natoms = int(''.join(zz for zz in i.strip() if zz.isdigit()))
         if "lattice parameter (a_0)" in i:
           self.alat = float(i.split()[5])
         if "number of k points=" in i:
@@ -306,7 +309,7 @@ class Struct:
         self.energy= float(i.split()[4])*self.RYtoeV
       if "new unit-cell volume" in i:
         self.volume = float(i.split()[4])*(self.BOHRtoA**3)
-      if "CELL_PARAMETERS" in i:
+      if "cell_parameters" in i:
         if "angstrom" in i:
           for j in ['a','b','c']:
             line = next(f)
@@ -320,7 +323,7 @@ class Struct:
             for k in range(0,3):
               self.lattice[j][k] = self.alat*float(tmp[k])
         self.Normalize()
-      if "ATOMIC_POSITIONS" in i:
+      if "atomic_positions" in i:
         self.atomindex.reset()
         if "angstrom" in i:
           for j in range(0,self.natoms):
