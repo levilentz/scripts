@@ -55,9 +55,9 @@ def xml(f,extra_tag=None):
       tag = extra_tag[c]['tag']
       val = extra_tag[c]['val']
       if 'other_tags' in list(extra_tag[c].keys()):
-        _ = Et.Element(tag,**extra_tag[c])
+        _ = ET.Element(tag,**extra_tag[c]['other_tags'])
       else: 
-        _ = Et.Element(tag)
+        _ = ET.Element(tag)
       _.text = val
       system.append(_)
     sys.append(system)
