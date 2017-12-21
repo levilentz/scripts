@@ -116,3 +116,5 @@ def rotate_QE(x,theta,dir_='x'):
   for c,i in enumerate(np.transpose(l)):
     y.lattice[t[c]] = i
   return y
+
+hammett = {'F':	0.34,'NH2':-0.16,'H':0,'COCl':0.51,'CF3':0.43,'OH':0.12,'NHNO2':0.91}
