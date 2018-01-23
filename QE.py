@@ -236,7 +236,8 @@ class Struct:
 \centering
 \caption{CAPTION}
 \label{my-label}
-\\begin{tabular}{ll}
+\\bigskip
+\\begin{tabular}{lr}
 \hline
  Parameter & Value  \\\\
 \hline
@@ -253,8 +254,9 @@ class Struct:
     t1 = '''\\begin{table}[]
 \centering
 \caption{CAPTION}
+\\bigskip
 \label{my-label}
-\\begin{tabular}{llll}
+\\begin{tabular}{lrrr}
 \hline
  Atom & X & Y & Z  \\\\
 \hline
@@ -269,7 +271,7 @@ class Struct:
       #tmp = copy.deepcopy(self.atoms[i])
       tmp = np.dot(conversion,self.atoms[i])
       params_1 += self.atomindex.sanitize(i) + " & " + ' & '.join([str(round(j,3)) for j in tmp]) + '\\\\ \n'
-    print(t1.replace('PARAMS',params_1).replace('CAPTION',self.to_Formula() + ' atomic posisions. Here positions are shown in fractional coordinates'))
+    print(t1.replace('PARAMS',params_1).replace('CAPTION',self.to_Formula() + ' atomic positions. Here positions are shown in fractional coordinates'))
 
   def File_Process(self,filestring):
     try:
@@ -438,9 +440,21 @@ class Struct:
       self.JSON = json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=1)
 
   def to_Formula(self):
+    from math import gcd
     string = ''
+    cmmon = []
     for i in self.atomindex.keys:
-      string += i + str(self.atomindex.keys[i])
+      cmmon.append(self.atomindex.keys[i] + 1)
+    if len(cmmon) == 1:
+      div = cmmon[0]
+    else: 
+      div = cmmon[0]
+      for c in cmmon[1::]:
+          div = gcd(div , c)
+    for i in self.atomindex.keys:
+      t_ = str(int((self.atomindex.keys[i]+1)/div))
+      if t_ == '1': t_ = ''
+      string += i + t_
     return string
 
   def to_database(self):
