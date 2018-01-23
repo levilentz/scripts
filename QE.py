@@ -230,6 +230,47 @@ class Struct:
     #test = tree.find('./IONS/ATOM.1')
     #print(test)
 
+  def to_Latex(self):
+    self.Normalize()
+    t = '''\\begin{table}[]
+\centering
+\caption{CAPTION}
+\label{my-label}
+\\begin{tabular}{ll}
+\hline
+ Parameter & Value  \\\\
+\hline
+ PARAMS
+\hline
+\end{tabular}
+\end{table}'''
+    params = ''
+    for c,i in enumerate(self.norms):
+      params += i.upper() + ' & ' + str(round(self.norms[i],2)) + ' \\\\' + '\n'
+    for i in self.angles:
+      params += '$\\' + i + '$ & ' + str(round(self.angles[i],2)) + ' \\\\' + '\n'
+    print(t.replace('PARAMS',params).replace('CAPTION',self.to_Formula() + ' unit cell parameters. Length units are in \\AA and angles are in degrees.'))
+    t1 = '''\\begin{table}[]
+\centering
+\caption{CAPTION}
+\label{my-label}
+\\begin{tabular}{llll}
+\hline
+ Atom & X & Y & Z  \\\\
+\hline
+ PARAMS
+\hline
+\end{tabular}
+\end{table}'''
+    params_1 = ''
+    conversion = np.linalg.inv(self.From_Crystal())
+    print()
+    for i in self.atoms:
+      #tmp = copy.deepcopy(self.atoms[i])
+      tmp = np.dot(conversion,self.atoms[i])
+      params_1 += self.atomindex.sanitize(i) + " & " + ' & '.join([str(round(j,3)) for j in tmp]) + '\\\\ \n'
+    print(t1.replace('PARAMS',params_1).replace('CAPTION',self.to_Formula() + ' atomic posisions. Here positions are shown in fractional coordinates'))
+
   def File_Process(self,filestring):
     try:
       f = open(filestring,'r')
