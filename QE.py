@@ -234,6 +234,49 @@ class Struct:
     #test = tree.find('./IONS/ATOM.1')
     #print(test)
 
+  def to_Latex(self):
+    self.Normalize()
+    t = '''\\begin{table}[]
+\centering
+\caption{CAPTION}
+\label{my-label}
+\\bigskip
+\\begin{tabular}{lr}
+\hline
+ Parameter & Value  \\\\
+\hline
+ PARAMS
+\hline
+\end{tabular}
+\end{table}'''
+    params = ''
+    for c,i in enumerate(self.norms):
+      params += i.upper() + ' & ' + str(round(self.norms[i],2)) + ' \\\\' + '\n'
+    for i in self.angles:
+      params += '$\\' + i + '$ & ' + str(round(self.angles[i],2)) + ' \\\\' + '\n'
+    print(t.replace('PARAMS',params).replace('CAPTION',self.to_Formula() + ' unit cell parameters. Length units are in \\AA and angles are in degrees.'))
+    t1 = '''\\begin{table}[]
+\centering
+\caption{CAPTION}
+\\bigskip
+\label{my-label}
+\\begin{tabular}{lrrr}
+\hline
+ Atom & X & Y & Z  \\\\
+\hline
+ PARAMS
+\hline
+\end{tabular}
+\end{table}'''
+    params_1 = ''
+    conversion = np.linalg.inv(self.From_Crystal())
+    print()
+    for i in self.atoms:
+      #tmp = copy.deepcopy(self.atoms[i])
+      tmp = np.dot(conversion,self.atoms[i])
+      params_1 += self.atomindex.sanitize(i) + " & " + ' & '.join([str(round(j,3)) for j in tmp]) + '\\\\ \n'
+    print(t1.replace('PARAMS',params_1).replace('CAPTION',self.to_Formula() + ' atomic positions. Here positions are shown in fractional coordinates'))
+
   def File_Process(self,filestring):
     try:
       f = open(filestring,'r')
@@ -243,10 +286,13 @@ class Struct:
       raise IOError
     linenum = 0
     for i in f:
+      i = i.lower()
       if "ERROR" in i.upper():
         print("There is an error in this calculation")
         #sys.exit(2)
       if linenum < 1000:
+        if 'nat' in i.lower():
+          self.natoms = int(''.join(zz for zz in i.strip() if zz.isdigit()))
         if "lattice parameter (a_0)" in i:
           self.alat = float(i.split()[5])
         if "number of k points=" in i:
@@ -313,7 +359,7 @@ class Struct:
         self.energy= float(i.split()[4])*self.RYtoeV
       if "new unit-cell volume" in i:
         self.volume = float(i.split()[4])*(self.BOHRtoA**3)
-      if "CELL_PARAMETERS" in i:
+      if "cell_parameters" in i:
         if "angstrom" in i:
           for j in ['a','b','c']:
             line = next(f)
@@ -401,9 +447,21 @@ class Struct:
       self.JSON = json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=1)
 
   def to_Formula(self):
+    from math import gcd
     string = ''
+    cmmon = []
     for i in self.atomindex.keys:
-      string += i + str(self.atomindex.keys[i])
+      cmmon.append(self.atomindex.keys[i] + 1)
+    if len(cmmon) == 1:
+      div = cmmon[0]
+    else: 
+      div = cmmon[0]
+      for c in cmmon[1::]:
+          div = gcd(div , c)
+    for i in self.atomindex.keys:
+      t_ = str(int((self.atomindex.keys[i]+1)/div))
+      if t_ == '1': t_ = ''
+      string += i + t_
     return string
 
   def to_database(self):
