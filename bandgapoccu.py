@@ -54,21 +54,38 @@ class bg:
     f.close() 
     minmax = []
     metallic = False
-    for c,i in enumerate(self.occu):
-      t = np.array(i)
-      if 0.0 in t:
-        idx = np.where(t==0.0)[0][0]
-        te = np.array(self.energy[c])
-        minmax.append([te[idx-1],te[idx]])
+    if len(self.occu) > 0:
+      for c,i in enumerate(self.occu):
+        t = np.array(i)
+        if 0.0 in t:
+          idx = np.where(t==0.0)[0][0]
+          te = np.array(self.energy[c])
+          minmax.append([te[idx-1],te[idx]])
+        else:
+          metallic = True 
+      if not metallic:
+        minmax = np.array(minmax)
+        self.vbm = np.max(minmax[:,0])
+        self.cbm = np.min(minmax[:,1])
+        self.bg = self.cbm - self.vbm
       else:
-        metallic = True 
-    if not metallic:
+        self.vbm = None
+        self.cbm = None
+        self.metallic = True
+        self.bg = 0.0
+    else:
+      minmax = []
+      for c,i in enumerate(self.energy):
+        t = np.array(i)
+        t = np.subtract(i,self.Fermi)
+        m_ = np.argwhere(t>0)
+        minmax.append([t[m_[0][0]-1],t[m_[0][0]]]) 
       minmax = np.array(minmax)
       self.vbm = np.max(minmax[:,0])
       self.cbm = np.min(minmax[:,1])
       self.bg = self.cbm - self.vbm
-    else:
-      self.vbm = None
-      self.cbm = None
-      self.metallic = True
-      self.bg = 0.0
+
+if __name__ == "__main__":
+  import sys
+  x = bg(sys.argv[1])
+  print(x.bg)

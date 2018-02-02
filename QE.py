@@ -76,6 +76,19 @@ class Struct:
       tmp = np.dot(conversion,self.atoms[i])
       print(self.atomindex.sanitize(i) + " " + ' '.join([str(round(j,4)) for j in tmp])) 
 
+  def wrap_Cell(self):
+    self.Normalize()
+    conversion = np.linalg.inv(self.From_Crystal())
+    c_1 = self.From_Crystal()
+    for i in self.atoms:
+      tmp = np.dot(conversion,self.atoms[i])
+      for c,j in enumerate(tmp):
+        if j < 0.0: tmp[c] += 1
+        elif j > 1.0: tmp[c] -= 1
+      self.atoms[i] = np.dot(c_1,tmp)
+      
+    
+
   def RDF(self,rcut=5.0,dr=0.1):
     supcell = []
     rho = self.natoms/self.volume
