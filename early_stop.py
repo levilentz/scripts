@@ -12,10 +12,14 @@ from functions import get_network_info as get_net
 
 def to_pd(d_,train,df=None,f=None):
   if df is not None:
+    print(d_)
     for i in d_:
       df.loc[i,'target'] = d_[i]['target']
       df.loc[i,'prediction'] = d_[i]['prophet']
-      df.loc[i,'train'] = train
+      if 'train' in list(d_[i].keys()):
+        df.loc[i,'train'] = d_[i]['train']
+      else:
+        df.loc[i,'train'] = train
   else:
     for i in d_:
       f.write(','.join([str(zz) for zz in [d_[i]['target'],d_[i]['prophet'],train]]) + '\n')
@@ -78,7 +82,49 @@ def get_restart(s):
   f.close()
   return nsave,checkpoint,nint
 
-def process(fname,df=None,executable='PROPhet',np=32,db=None,d=None):
+def process(fname,bout=None,df=None,executable='PROPhet',np=32,db=None,d=None):
+  if bout is not None:
+    if d is None: 
+      t = []
+      f = open(bout)
+      for i in f:
+        if 'Iteration   ' in i:
+          i = next(f)
+          i = next(f)
+          while len(i.split()) == 4:
+            try:
+              t.append(i.split())
+              i = next(f)
+            except: break
+      f.close()
+      t = sorted(t,key= lambda x: float(x[2]))
+      d = [(int(t[0][0]),)]
+    nsave,checkpoint,nint = get_restart(fname)
+    print(nsave,checkpoint,nint)
+    nsave = int(nsave)
+    c = int(d[0][0])
+    correct = round((c/nsave)+1)*nsave
+    valf = convert(fname,'train.dat','FILE')
+    if not os.path.isfile(checkpoint + '_' + str(correct)): 
+      if os.path.isfile(checkpoint + '_' +  str(int(correct) - int(nsave))):
+        correct = correct - nsave
+        chkpoint = checkpoint + '_' + str(correct)
+      elif int(correct) - int(nsave) == int(nint):
+        chkpoint = checkpoint
+      else:  
+        raise ValueError(correct)
+    else: chkpoint = checkpoint + '_' + str(correct)
+    f = open('val_temp','w')
+    f.write(valf.replace('FILE',chkpoint))
+    f.close()
+    #t = os.popen('mpirun -np {np} {prop} -in val_temp -validate | tee train.dat.out'.format(prop=executable,np=np))
+    t = os.popen('mpirun -np 32 PROPhet -in val_temp -validate | tee train.dat.out'.format(prop=executable,np=np)).read()
+    #print(t)
+    #funct = open(checkpoint + '_' + str(correct)).read()
+    funct = open(chkpoint).read()
+    t_file = ['train.dat']
+    to_pkl(db=db,df=df,t_file=t_file,funct=funct)
+    return
   np = str(np)
   nsave,checkpoint,nint = get_restart(fname)
   valf = convert(fname,'val.dat','FILE')
@@ -170,5 +216,7 @@ def split_val(df,val_file='val.dat'):
   f.close()
   
 if __name__ == "__main__":
-  df = construct_df('/data/llentz/Charge-Density/no_Phosphate/data/all.json')
-  d = process('bfgs_file',df=df,executable='PROPhet',db='/data/llentz/codeplayground/data/Database.pkl')
+  #df = construct_df('/data/llentz/Charge-Density/no_Phosphate/data/all.json')
+  #d = process('bfgs_file',df=df,executable='PROPhet',db='/data/llentz/codeplayground/data/Database.pkl')
+  df = construct_df('/data/llentz/Charge-Density/HSE/data/all.hse.json')
+  d = process('bfgs_file',df=df,executable='PROPhet',db='/data/llentz/Charge-Density/HSE/data/database.hse.pkl',bout='train.bfgs')
