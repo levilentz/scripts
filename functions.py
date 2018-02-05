@@ -8,9 +8,15 @@ def prophet_map(pname,tname):
   try:
     d_ = open(tname).read().split('\n')[:-1]
     d = []
+    train = []
     for i in d_: 
       if i is not '':
-        d.append(i.split()[0])
+        i_ = i.split()
+        d.append(i_[0])
+        if len(i_) > 1:
+          train.append(i_[1])
+        else:
+          train.append(i_[0])
     d_ = d
   except:
     print('error opening ',tname)
@@ -20,17 +26,13 @@ def prophet_map(pname,tname):
     for i in f:
       while 'System' not in i: 
         i = next(f)
-      if 'train' in i.lower(): train = True
-      else: train = False
       i = next(f)
       i = next(f)
       cnt = 0
       while len(i.split()) > 0:
+        if 'warning' in i.lower(): continue
         s_ = i.split()
-        if train:
-          t_ = {'prophet':s_[1],'target':s_[2],'train':s_[3]}
-        else:
-          t_ = {'prophet':s_[1],'target':s_[2]}
+        t_ = {'prophet':s_[1],'target':s_[2],'train':train[cnt]}
         p_[d_[cnt]] = t_
         cnt += 1
         i = next(f)
