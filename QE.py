@@ -66,14 +66,16 @@ class Struct:
     #temp3 = [0,0,self.norms['c']*vol/np.sin(self.angles['gamma']*np.pi/180.)]
     #conversion = np.vstack((np.asarray(temp1),np.asarray(temp2),np.asarray(temp3))) 
     t = []
-    for i in self.lattice:
-      t.append(self.lattice[i])
+    for i in ['a','b','c']:
+      t.append(list(self.lattice[i]))
+    print(t)
     return np.transpose(np.array(t))
     #return np.linalg.inv(np.transpose(np.array(t)))
   
   def to_Crystal(self):
     self.Normalize()
     conversion = np.linalg.inv(self.From_Crystal())
+    print(conversion)
     print("ATOM_POSITIONS {crystal}")
     for i in self.atoms:
       #tmp = copy.deepcopy(self.atoms[i])
@@ -87,8 +89,12 @@ class Struct:
     for i in self.atoms:
       tmp = np.dot(conversion,self.atoms[i])
       for c,j in enumerate(tmp):
-        if j < 0.0: tmp[c] += 1
-        elif j > 1.0: tmp[c] -= 1
+        if tmp[c] < 0.0: 
+          while tmp[c] <= 0.0:
+            tmp[c] += 1
+        elif tmp[c] > 1.0: 
+          while tmp[c] >= 1.0:
+            tmp[c] -= 1
       self.atoms[i] = np.dot(c_1,tmp)
       
     
