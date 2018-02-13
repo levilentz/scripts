@@ -454,6 +454,7 @@ class Struct:
     for i in self.atomindex.keys:
       t_ = str(int((self.atomindex.keys[i]+1)/div))
       if t_ == '1': t_ = ''
+      else: t_ = '$_' + t_ + '$'
       string += i + t_
     return string
 
