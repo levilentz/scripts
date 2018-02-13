@@ -66,19 +66,38 @@ class Struct:
     #temp3 = [0,0,self.norms['c']*vol/np.sin(self.angles['gamma']*np.pi/180.)]
     #conversion = np.vstack((np.asarray(temp1),np.asarray(temp2),np.asarray(temp3))) 
     t = []
-    for i in self.lattice:
-      t.append(self.lattice[i])
+    for i in ['a','b','c']:
+      t.append(list(self.lattice[i]))
+    print(t)
     return np.transpose(np.array(t))
     #return np.linalg.inv(np.transpose(np.array(t)))
   
   def to_Crystal(self):
     self.Normalize()
     conversion = np.linalg.inv(self.From_Crystal())
+    print(conversion)
     print("ATOM_POSITIONS {crystal}")
     for i in self.atoms:
       #tmp = copy.deepcopy(self.atoms[i])
       tmp = np.dot(conversion,self.atoms[i])
-      print(self.atomindex.sanitize(i) + " " + ' '.join([str(round(j,4)) for j in tmp])) 
+      print(self.atomindex.sanitize(i) + " " + ' '.join([str(round(j,9)) for j in tmp])) 
+
+  def wrap_Cell(self):
+    self.Normalize()
+    conversion = np.linalg.inv(self.From_Crystal())
+    c_1 = self.From_Crystal()
+    for i in self.atoms:
+      tmp = np.dot(conversion,self.atoms[i])
+      for c,j in enumerate(tmp):
+        if tmp[c] < 0.0: 
+          while tmp[c] <= 0.0:
+            tmp[c] += 1
+        elif tmp[c] > 1.0: 
+          while tmp[c] >= 1.0:
+            tmp[c] -= 1
+      self.atoms[i] = np.dot(c_1,tmp)
+      
+    
 
   def RDF(self,rcut=5.0,dr=0.1):
     supcell = []
@@ -213,6 +232,10 @@ class Struct:
       self.alat = None
       self.Ecut = None
       self.RhoCut = None
+    try:
+      self.energy = float(tree.find('./TOTAL_ENERGY').text)
+    except:
+      self.energy = None
     for i in ['a','b','c']:
       try:
         for c,j in enumerate(tree.find('./CELL/DIRECT_LATTICE_VECTORS/' + MAP[i]).text.split()):
@@ -348,6 +371,9 @@ class Struct:
             line = next(f).split()
             self.atoms[self.atomindex.key(line[1])] = np.multiply(np.array([float(line[6]),float(line[7]),float(line[8])]),self.alat)
           next
+        if 'nat' in i.lower():
+          self.natoms = int(''.join([zz for zz in i if zz.isdigit()]))
+          next
       if "!" in i and "ENERGY" in i.upper():
         self.energy= float(i.split()[4])*self.RYtoeV
       if "new unit-cell volume" in i:
@@ -366,7 +392,7 @@ class Struct:
             for k in range(0,3):
               self.lattice[j][k] = self.alat*float(tmp[k])
         self.Normalize()
-      if "atomic_positions" in i:
+      if "ATOMIC_POSITIONS" in i.upper():
         self.atomindex.reset()
         if "angstrom" in i:
           for j in range(0,self.natoms):
@@ -376,7 +402,7 @@ class Struct:
           for j in range(0,self.natoms):
             line = next(f).split()
             self.atoms[self.atomindex.key(line[0])] = np.array([self.alat*float(line[1]),self.alat*float(line[2]),self.alat*float(line[3])])
-        if "crystal" in i:
+        if "crystal" in i.lower():
           conversion = self.From_Crystal()
           for j in range(0,self.natoms):
             line = next(f).split()

@@ -6,24 +6,27 @@ from random import shuffle
 import sys
 
 
-def xml(f,extra_tag=None):
+def xml(f,extra_tag=None,p_=10):
   '''This takes a list of directories and creates a PROPhet xml file'''
   root = ET.Element("PROPhet")
   nsystms = ET.Element('nsystem')
-  nsystms.text = str(len(f))
   root.append(nsystms)
   systems = ET.Element("systems")
   for i in range(200): shuffle(f)
   N_train = int(0.80*len(f))
   N_val = int(0.90*len(f))
   sys = []
+  cnt = 1
   for c,i in enumerate(f):
-    if c%10 == 0 : print(c)
+    if c%p_ == 0 : print(c)
     if c < N_train: t_flag = "train"
     elif N_train < c < N_val: t_flag = "val"
     else: t_flag = 'test'
     x = QE.Struct()
-    x.XML_Process(i)
+    try:
+      x.XML_Process(i)
+    except:
+      continue
     system = ET.Element("system",id=str(c + 1))
     train = ET.Element('train')
     train.text = t_flag
@@ -61,9 +64,11 @@ def xml(f,extra_tag=None):
       _.text = val
       system.append(_)
     sys.append(system)
+    cnt += 1
     del x
   for i in sys:
     systems.append(i)
+  nsystms.text = str(cnt)
   root.append(systems)
   str_ = ET.tostring(root,pretty_print=True).decode('utf-8')
   return str_
