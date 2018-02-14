@@ -68,7 +68,6 @@ class Struct:
     t = []
     for i in ['a','b','c']:
       t.append(list(self.lattice[i]))
-    print(t)
     return np.transpose(np.array(t))
     #return np.linalg.inv(np.transpose(np.array(t)))
   
