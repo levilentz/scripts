@@ -619,10 +619,15 @@ class Struct:
   def __eq__(self,other):
     if type(other) == type(self):
       diff = []
-      for c,i in enumerate(self.atoms):
-        diff.append(np.linalg.norm(self.atoms[i] - other.atoms[i]))
+      keys_ = []
+      l = sorted(self.atoms.items(),key=lambda x: (x[1][0],x[1][1],x[1][2]))
+      r = sorted(other.atoms.items(),key=lambda x: (x[1][0],x[1][1],x[1][2]))
+      for c,i in enumerate(l):
+        diff.append(np.linalg.norm(i[1] - r[c][1]))
+        keys_.append(self.atomindex.sanitize(i[0]) == self.atomindex.sanitize(r[c][0]))
       m = np.max(np.abs(diff))
       if m > 1e-3: return False
+      if False in keys_: return False
       diff = []
       for c,i in enumerate(self.lattice): 
         diff.append(np.linalg.norm(self.lattice[i] - other.lattice[i]))
