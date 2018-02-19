@@ -28,7 +28,7 @@ class index():
     self.keys = {}
 
 class Struct:
-  def __init__(self):
+  def __init__(self,direct = None):
     self.BOHRtoA = 0.529177249
     self.RYtoeV = 13.605698066
     self.program = "QE"
@@ -58,6 +58,11 @@ class Struct:
     self.email = ""
     self.atomindex = index()
     self.noband = False
+    if direct is not None:
+      if os.path.isfile(direct):
+        self.File_Process(direct)
+      elif os.path.isdir(direct):
+        self.XML_Process(direct)
 
   def From_Crystal(self):
     #vol = np.sqrt(1 - np.cos(self.angles['alpha']*np.pi/180.)**2 - np.cos(self.angles['beta']*np.pi/180.)**2 - np.cos(self.angles['gamma']*np.pi/180.)**2 + 2*np.cos(self.angles['alpha']*np.pi/180.)*np.cos(self.angles['beta']*np.pi/180.)*np.cos(self.angles['gamma']*np.pi/180.))
@@ -203,7 +208,7 @@ class Struct:
     try:
       f = open(dirstring + "/data-file.xml")
     except:
-      print("Cannot open %s/data-file.xml" % dirstring)
+      raise ValueError("Cannot open " +  dirstring + '/data-file.xml')
     tree = ElementTree.parse(f)
     f.close()
     MAP = {'a':'a1','b':'a2','c':'a3'}
@@ -305,8 +310,8 @@ class Struct:
     linenum = 0
     for i in f:
       i = i.lower()
-      if "ERROR" in i.upper():
-        print("There is an error in this calculation")
+      #if "ERROR" in i.upper():
+        #print("There is an error in this calculation")
         #sys.exit(2)
       if linenum < 1000:
         if 'nat' in i.lower():
