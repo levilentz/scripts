@@ -3,6 +3,47 @@ import numpy as np
 import json
 import copy
 
+def get_pdos(key,directory = '.'):
+  d = []
+  cnt = []
+  files = glob.glob(directory + '/' + '*(' + key + ')*')
+  for i in files:
+    lb = i.find('#') + 1
+    rb = i.find('(',lb)
+    if i[lb:rb] not in cnt: cnt.append(i[lb:rb])
+  for i in [files[0]]:
+    f = open(i)
+    next(f)
+    next(f)
+    d_ = []
+    for jj in f:
+      d_.append([float(zz) for zz in [jj.split()[0],jj.split()[1]]])
+    f.close()
+    if len(d) == 0: d = np.array(d_)
+    else:
+      d[:,1] += np.array(d_)[:,1]
+  return d.tolist(),len(cnt)
+
+def get_files(directory = '.'):
+  files = glob.glob(directory + '/' + '*pdos_atm*')
+  pdos = {}
+  cnt = {}
+  for i in files:
+    lb = i.find('(')
+    rb = i.find(')',lb)
+    key = i[lb+1:rb]
+    if key not in pdos:
+      pdos[key],cnt[key] = get_pdos(key,directory=directory)
+  return pdos,cnt
+
+def get_fermi(fname='vc-relax.out',directory = '.'):
+  f = open(directory + '/' + fname)
+  fermi = []
+  for i in f:
+    if 'Fermi' in i:
+      fermi.append(float(i.split()[-2]))
+  return fermi
+
 def prophet_map(pname,tname):
   '''This is a conversion routine to convert PROPhet out put into a dictionary with the PK being the directory'''
   try:
@@ -38,6 +79,13 @@ def prophet_map(pname,tname):
         i = next(f)
       break
   return p_
+
+def subscript(string):
+  t = ''
+  for i in string:
+    if i.isdigit(): t+= '$_' + i + '$'
+    else: t += i
+  return t
 
 def prophet_list(pname):
   try:

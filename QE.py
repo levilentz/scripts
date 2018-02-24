@@ -79,7 +79,6 @@ class Struct:
   def to_Crystal(self):
     self.Normalize()
     conversion = np.linalg.inv(self.From_Crystal())
-    print(conversion)
     print("ATOM_POSITIONS {crystal}")
     for i in self.atoms:
       #tmp = copy.deepcopy(self.atoms[i])
@@ -257,12 +256,13 @@ class Struct:
     #test = tree.find('./IONS/ATOM.1')
     #print(test)
 
-  def to_Latex(self):
+  def to_Latex(self,caption=None,ncols=1):
     self.Normalize()
-    t = '''\\begin{table}[]
+    if caption is None: caption = self.to_Formula()
+    t = '''\\begin{table}[!ht]
 \centering
 \caption{CAPTION}
-\label{my-label}
+%\label{my-label}
 \\bigskip
 \\begin{tabular}{lr}
 \hline
@@ -273,19 +273,20 @@ class Struct:
 \end{tabular}
 \end{table}'''
     params = ''
-    for c,i in enumerate(self.norms):
+    for c,i in enumerate(['a','b','c']):
       params += i.upper() + ' & ' + str(round(self.norms[i],2)) + ' \\\\' + '\n'
-    for i in self.angles:
+    for i in ['alpha','beta','gamma']:
       params += '$\\' + i + '$ & ' + str(round(self.angles[i],2)) + ' \\\\' + '\n'
-    print(t.replace('PARAMS',params).replace('CAPTION',self.to_Formula() + ' unit cell parameters. Length units are in \\AA and angles are in degrees.'))
-    t1 = '''\\begin{table}[]
+    print(t.replace('PARAMS',params).replace('CAPTION',caption + ' unit cell parameters. Length units are in \\r{A}  and angles are in degrees.'))
+    header = '& '.join(['Atom & X & Y & Z']*ncols)
+    t1 = '''\\begin{table}[!ht]
 \centering
 \caption{CAPTION}
 \\bigskip
-\label{my-label}
-\\begin{tabular}{lrrr}
+%\label{my-label}
+\\begin{tabular}{''' + '|'.join(['lrrr']*ncols) + '''}
 \hline
- Atom & X & Y & Z  \\\\
+ ''' + header + '''\\\\
 \hline
  PARAMS
 \hline
@@ -294,11 +295,21 @@ class Struct:
     params_1 = ''
     conversion = np.linalg.inv(self.From_Crystal())
     print()
-    for i in self.atoms:
-      #tmp = copy.deepcopy(self.atoms[i])
-      tmp = np.dot(conversion,self.atoms[i])
-      params_1 += self.atomindex.sanitize(i) + " & " + ' & '.join([str(round(j,3)) for j in tmp]) + '\\\\ \n'
-    print(t1.replace('PARAMS',params_1).replace('CAPTION',self.to_Formula() + ' atomic positions. Here positions are shown in fractional coordinates'))
+    atom_keys = list(self.atoms.keys())
+    #for i in self.atoms:
+    for c in range(0,len(atom_keys) - ncols - 1,ncols):
+      i = atom_keys[c]
+      lne = ''
+      for j in range(0,ncols):
+        try:
+          tmp = np.dot(conversion,self.atoms[atom_keys[c + j]])
+          lne += self.atomindex.sanitize(atom_keys[c+j]) + " & " + ' & '.join([str(round(j,3)) for j in tmp]) + ' '
+          if (ncols > 1) & j < ncols -1: lne += '&'
+        except:
+          lne += ' & & &'
+      #params_1 += self.atomindex.sanitize(i) + " & " + ' & '.join([str(round(j,3)) for j in tmp]) + '\\\\ \n'
+      params_1 += lne + '\\\\ \n'
+    print(t1.replace('PARAMS',params_1).replace('CAPTION',caption + ' atomic positions. Here positions are shown in fractional coordinates'))
 
   def File_Process(self,filestring):
     try:
