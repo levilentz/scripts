@@ -32,7 +32,7 @@ def prophet_map(pname,tname):
       while len(i.split()) > 0:
         if 'warning' in i.lower(): continue
         s_ = i.split()
-        t_ = {'prophet':s_[1],'target':s_[2],'train':train[cnt]}
+        t_ = {'prophet':float(s_[1]),'target':float(s_[2]),'train':train[cnt]}
         p_[d_[cnt]] = t_
         cnt += 1
         i = next(f)
