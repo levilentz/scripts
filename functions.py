@@ -1,5 +1,6 @@
 
 import numpy as np
+import pandas as pd
 import json
 import copy
 
@@ -172,6 +173,18 @@ def rotate_QE(x,theta,dir_='x'):
     y.lattice[t[c]] = i
   return y
 
+def split_df(df,**kwargs):
+  '''This will add a column to a dataframe and split it into train, val, and test datasets'''
+  if not kwargs:
+    kwargs = **{'frac':0.80}
+  df['train'] = None
+  train = df.sample(**kwargs)
+  df.loc[train.index,'train'] = 'train'
+  rem = df.drop(train.index)
+  test = rem.sample(frac=0.50)
+  df.loc(test.index,'train') = 'test'
+  df.loc(rem.drop(test.index).index,'train') = 'val'
+
 def upf(stru):
   atom,cell = stru.return_params()
   t = {'H': 'H 1.0079 H.upf', 'He': 'He 4.0026 He.upf', 'Li': 'Li 6.941 Li.upf', 'Be': 'Be 9.0122 Be.upf', 'B': 'B 10.811 B.upf', 'C': 'C 12.0107 C.upf', 'N': 'N 14.0067 N.upf', 'O': 'O 15.9994 O.upf', 'F': 'F 18.9984 F.upf', 'Ne': 'Ne 20.1797 Ne.upf', 'Na': 'Na 22.9897 Na.upf', 'Mg': 'Mg 24.305 Mg.upf', 'Al': 'Al 26.9815 Al.upf', 'Si': 'Si 28.0855 Si.upf', 'P': 'P 30.9738 P.upf', 'S': 'S 32.065 S.upf', 'Cl': 'Cl 35.453 Cl.upf', 'Ar': 'Ar 39.948 Ar.upf', 'K': 'K 39.0983 K.upf', 'Ca': 'Ca 40.078 Ca.upf', 'Sc': 'Sc 44.9559 Sc.upf', 'Ti': 'Ti 47.867 Ti.upf', 'V': 'V 50.9415 V.upf', 'Cr': 'Cr 51.9961 Cr.upf', 'Mn': 'Mn 54.938 Mn.upf', 'Fe': 'Fe 55.845 Fe.upf', 'Co': 'Co 58.9332 Co.upf', 'Ni': 'Ni 58.6934 Ni.upf', 'Cu': 'Cu 63.54600000000001 Cu.upf', 'Zn': 'Zn 65.39 Zn.upf', 'Ga': 'Ga 69.723 Ga.upf', 'Ge': 'Ge 72.64 Ge.upf', 'As': 'As 74.9216 As.upf', 'Se': 'Se 78.96 Se.upf', 'Br': 'Br 79.904 Br.upf', 'Kr': 'Kr 83.8 Kr.upf', 'Rb': 'Rb 85.4678 Rb.upf', 'Sr': 'Sr 87.62 Sr.upf', 'Y': 'Y 88.9059 Y.upf', 'Zr': 'Zr 91.22399999999999 Zr.upf', 'Nb': 'Nb 92.9064 Nb.upf', 'Mo': 'Mo 95.94 Mo.upf', 'Tc': 'Tc 98.0 Tc.upf', 'Ru': 'Ru 101.07 Ru.upf', 'Rh': 'Rh 102.9055 Rh.upf', 'Pd': 'Pd 106.42 Pd.upf', 'Ag': 'Ag 107.8682 Ag.upf', 'Cd': 'Cd 112.411 Cd.upf', 'In': 'In 114.818 In.upf', 'Sn': 'Sn 118.71 Sn.upf', 'Sb': 'Sb 121.76 Sb.upf', 'Te': 'Te 127.6 Te.upf', 'I': 'I 126.9045 I.upf', 'Xe': 'Xe 131.293 Xe.upf', 'Cs': 'Cs 132.9055 Cs.upf', 'Ba': 'Ba 137.327 Ba.upf', 'La': 'La 138.9055 La.upf', 'Ce': 'Ce 140.116 Ce.upf', 'Pr': 'Pr 140.9077 Pr.upf', 'Nd': 'Nd 144.24 Nd.upf', 'Pm': 'Pm 145.0 Pm.upf', 'Sm': 'Sm 150.36 Sm.upf', 'Eu': 'Eu 151.964 Eu.upf', 'Gd': 'Gd 157.25 Gd.upf', 'Tb': 'Tb 158.9253 Tb.upf', 'Dy': 'Dy 162.5 Dy.upf', 'Ho': 'Ho 164.9303 Ho.upf', 'Er': 'Er 167.25900000000001 Er.upf', 'Tm': 'Tm 168.9342 Tm.upf', 'Yb': 'Yb 173.04 Yb.upf', 'Lu': 'Lu 174.967 Lu.upf', 'Hf': 'Hf 178.49 Hf.upf', 'Ta': 'Ta 180.9479 Ta.upf', 'W': 'W 183.84 W.upf', 'Re': 'Re 186.207 Re.upf', 'Os': 'Os 190.23 Os.upf', 'Ir': 'Ir 192.217 Ir.upf', 'Pt': 'Pt 195.078 Pt.upf', 'Au': 'Au 196.9665 Au.upf', 'Hg': 'Hg 200.59 Hg.upf', 'Tl': 'Tl 204.3833 Tl.upf', 'Pb': 'Pb 207.2 Pb.upf', 'Bi': 'Bi 208.9804 Bi.upf', 'Po': 'Po 209.0 Po.upf', 'At': 'At 210.0 At.upf', 'Rn': 'Rn 222.0 Rn.upf', 'Fr': 'Fr 223.0 Fr.upf', 'Ra': 'Ra 226.0 Ra.upf', 'Ac': 'Ac 227.0 Ac.upf', 'Th': 'Th 232.0381 Th.upf', 'Pa': 'Pa 231.0359 Pa.upf', 'U': 'U 238.0289 U.upf', 'Np': 'Np 237.0 Np.upf', 'Pu': 'Pu 244.0 Pu.upf', 'Am': 'Am 243.0 Am.upf'}
@@ -184,5 +197,5 @@ def upf(stru):
   return _
 
 
-hammett = {'F':	0.34,'NH2':-0.16,'H':0,'COCl':0.51,'CF3':0.43,'OH':0.12,'NHNO2':0.91}
+hammett = {'F': 0.34,'NH2':-0.16,'H':0,'COCl':0.51,'CF3':0.43,'OH':0.12,'NHNO2':0.91}
 color_keys = {'H': '#FFFFFF', 'He': '#D9FFFF', 'Li': '#CC80FF', 'Be': '#C2FF00', 'B': '#FFB5B5', 'C': '#909090', 'N': '#3050F8', 'O': '#FF0D0D', 'O2': '#FFAE00', 'F': '#90E050', 'Ne': '#B3E3F5', 'Na': '#AB5CF2', 'Mg': '#8AFF00', 'Al': '#BFA6A6', 'Si': '#F0C8A0', 'P': '#FF8000', 'S': '#FFFF30', 'Cl': '#1FF01F', 'Ar': '#80D1E3', 'K': '#8F40D4', 'Ca': '#3DFF00', 'Sc': '#E6E6E6', 'Ti': '#BFC2C7', 'Ti1': '#BFC2C7', 'Ti2': '#BFC2C7', 'V': '#A6A6AB', 'V1': '#A6A6AB', 'V2': '#A6A6AB', 'Cr': '#8A99C7', 'Cr1': '#8A99C7', 'Cr2': '#8A99C7', 'Mn': '#9C7AC7', 'Mn1': '#9C7AC7', 'Mn2': '#9C7AC7', 'Fe': '#FFA800', 'Fe1': '#FFA200', 'Fe2': '#FFD200', 'Co': '#F090A0', 'Co1': '#05004C', 'Co2': '#388786', 'Co3': '#67CAC9', 'Ni': '#50D050', 'Ni1': '#50D050', 'Ni2': '#50D050', 'Cu': '#808080', 'Cu1': '#808080', 'Cu2': '#606060', 'Zn': '#7D80B0', 'Ga': '#C28F8F', 'Ge': '#668F8F', 'As': '#BD80E3', 'Se': '#FFA100', 'Br': '#A62929', 'Kr': '#5CB8D1', 'Rb': '#702EB0', 'Sr': '#00FF00', 'Y': '#94FFFF', 'Zr': '#94E0E0', 'Nb': '#73C2C9', 'Mo': '#54B5B5', 'Tc': '#3B9E9E', 'Ru': '#248F8F', 'Rh': '#0A7D8C', 'Pd': '#006985', 'Ag': '#C0C0C0', 'Cd': '#FFD98F', 'In': '#A67573', 'Sn': '#668080', 'Sb': '#9E63B5', 'Te': '#D47A00', 'I': '#940094', 'Xe': '#429EB0', 'Cs': '#57178F', 'Ba': '#00C900', 'La': '#70D4FF', 'Ce': '#FFFFC7', 'Pr': '#D9FFC7', 'Nd': '#C7FFC7', 'Pm': '#A3FFC7', 'Sm': '#8FFFC7', 'Eu': '#61FFC7', 'Gd': '#45FFC7', 'Tb': '#30FFC7', 'Dy': '#1FFFC7', 'Ho': '#00FF9C', 'Er': '#00E675', 'Tm': '#00D452', 'Yb': '#00BF38', 'Lu': '#00AB24', 'Hf': '#4DC2FF', 'Ta': '#4DA6FF', 'W': '#2194D6', 'Re': '#267DAB', 'Os': '#266696', 'Ir': '#175487', 'Pt': '#D0D0E0', 'Au': '#FFD123', 'Hg': '#B8B8D0', 'Tl': '#A6544D', 'Pb': '#575961', 'Bi': '#9E4FB5', 'Po': '#AB5C00', 'At': '#754F45', 'Rn': '#428296', 'Fr': '#420066', 'Ra': '#007D00', 'Ac': '#70ABFA', 'Th': '#00BAFF', 'Pa': '#00A1FF', 'U': '#008FFF', 'Np': '#0080FF', 'Pu': '#006BFF', 'Am': '#545CF2', 'Cm': '#785CE3', 'Bk': '#8A4FE3', 'Cf': '#A136D4', 'Es': '#B31FD4', 'Fm': '#B31FBA', 'Md': '#B30DA6', 'No': '#BD0D87', 'Lr': '#C70066', 'Rf': '#CC0059', 'Db': '#D1004F', 'Sg': '#D90045', 'Bh': '#E00038', 'Hs': '#E6002E', 'Mt': '#EB0026'}
