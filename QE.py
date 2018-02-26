@@ -28,7 +28,7 @@ class index():
     self.keys = {}
 
 class Struct:
-  def __init__(self):
+  def __init__(self,direct = None):
     self.BOHRtoA = 0.529177249
     self.RYtoeV = 13.605698066
     self.program = "QE"
@@ -58,6 +58,11 @@ class Struct:
     self.email = ""
     self.atomindex = index()
     self.noband = False
+    if direct is not None:
+      if os.path.isfile(direct):
+        self.File_Process(direct)
+      elif os.path.isdir(direct):
+        self.XML_Process(direct)
 
   def From_Crystal(self):
     #vol = np.sqrt(1 - np.cos(self.angles['alpha']*np.pi/180.)**2 - np.cos(self.angles['beta']*np.pi/180.)**2 - np.cos(self.angles['gamma']*np.pi/180.)**2 + 2*np.cos(self.angles['alpha']*np.pi/180.)*np.cos(self.angles['beta']*np.pi/180.)*np.cos(self.angles['gamma']*np.pi/180.))
@@ -68,14 +73,12 @@ class Struct:
     t = []
     for i in ['a','b','c']:
       t.append(list(self.lattice[i]))
-    print(t)
     return np.transpose(np.array(t))
     #return np.linalg.inv(np.transpose(np.array(t)))
   
   def to_Crystal(self):
     self.Normalize()
     conversion = np.linalg.inv(self.From_Crystal())
-    print(conversion)
     print("ATOM_POSITIONS {crystal}")
     for i in self.atoms:
       #tmp = copy.deepcopy(self.atoms[i])
@@ -204,7 +207,7 @@ class Struct:
     try:
       f = open(dirstring + "/data-file.xml")
     except:
-      print("Cannot open %s/data-file.xml" % dirstring)
+      raise ValueError("Cannot open " +  dirstring + '/data-file.xml')
     tree = ElementTree.parse(f)
     f.close()
     MAP = {'a':'a1','b':'a2','c':'a3'}
@@ -253,12 +256,13 @@ class Struct:
     #test = tree.find('./IONS/ATOM.1')
     #print(test)
 
-  def to_Latex(self):
+  def to_Latex(self,caption=None,ncols=1):
     self.Normalize()
-    t = '''\\begin{table}[]
+    if caption is None: caption = self.to_Formula()
+    t = '''\\begin{table}[!ht]
 \centering
 \caption{CAPTION}
-\label{my-label}
+%\label{my-label}
 \\bigskip
 \\begin{tabular}{lr}
 \hline
@@ -269,19 +273,20 @@ class Struct:
 \end{tabular}
 \end{table}'''
     params = ''
-    for c,i in enumerate(self.norms):
+    for c,i in enumerate(['a','b','c']):
       params += i.upper() + ' & ' + str(round(self.norms[i],2)) + ' \\\\' + '\n'
-    for i in self.angles:
+    for i in ['alpha','beta','gamma']:
       params += '$\\' + i + '$ & ' + str(round(self.angles[i],2)) + ' \\\\' + '\n'
-    print(t.replace('PARAMS',params).replace('CAPTION',self.to_Formula() + ' unit cell parameters. Length units are in \\AA and angles are in degrees.'))
-    t1 = '''\\begin{table}[]
+    print(t.replace('PARAMS',params).replace('CAPTION',caption + ' unit cell parameters. Length units are in \\r{A}  and angles are in degrees.'))
+    header = '& '.join(['Atom & X & Y & Z']*ncols)
+    t1 = '''\\begin{table}[!ht]
 \centering
 \caption{CAPTION}
 \\bigskip
-\label{my-label}
-\\begin{tabular}{lrrr}
+%\label{my-label}
+\\begin{tabular}{''' + '|'.join(['lrrr']*ncols) + '''}
 \hline
- Atom & X & Y & Z  \\\\
+ ''' + header + '''\\\\
 \hline
  PARAMS
 \hline
@@ -290,11 +295,21 @@ class Struct:
     params_1 = ''
     conversion = np.linalg.inv(self.From_Crystal())
     print()
-    for i in self.atoms:
-      #tmp = copy.deepcopy(self.atoms[i])
-      tmp = np.dot(conversion,self.atoms[i])
-      params_1 += self.atomindex.sanitize(i) + " & " + ' & '.join([str(round(j,3)) for j in tmp]) + '\\\\ \n'
-    print(t1.replace('PARAMS',params_1).replace('CAPTION',self.to_Formula() + ' atomic positions. Here positions are shown in fractional coordinates'))
+    atom_keys = list(self.atoms.keys())
+    #for i in self.atoms:
+    for c in range(0,len(atom_keys) - ncols - 1,ncols):
+      i = atom_keys[c]
+      lne = ''
+      for j in range(0,ncols):
+        try:
+          tmp = np.dot(conversion,self.atoms[atom_keys[c + j]])
+          lne += self.atomindex.sanitize(atom_keys[c+j]) + " & " + ' & '.join([str(round(j,3)) for j in tmp]) + ' '
+          if (ncols > 1) & j < ncols -1: lne += '&'
+        except:
+          lne += ' & & &'
+      #params_1 += self.atomindex.sanitize(i) + " & " + ' & '.join([str(round(j,3)) for j in tmp]) + '\\\\ \n'
+      params_1 += lne + '\\\\ \n'
+    print(t1.replace('PARAMS',params_1).replace('CAPTION',caption + ' atomic positions. Here positions are shown in fractional coordinates'))
 
   def File_Process(self,filestring):
     try:
@@ -306,8 +321,8 @@ class Struct:
     linenum = 0
     for i in f:
       i = i.lower()
-      if "ERROR" in i.upper():
-        print("There is an error in this calculation")
+      #if "ERROR" in i.upper():
+        #print("There is an error in this calculation")
         #sys.exit(2)
       if linenum < 1000:
         if 'nat' in i.lower():
@@ -621,10 +636,15 @@ class Struct:
   def __eq__(self,other):
     if type(other) == type(self):
       diff = []
-      for c,i in enumerate(self.atoms):
-        diff.append(np.linalg.norm(self.atoms[i] - other.atoms[i]))
+      keys_ = []
+      l = sorted(self.atoms.items(),key=lambda x: (x[1][0],x[1][1],x[1][2]))
+      r = sorted(other.atoms.items(),key=lambda x: (x[1][0],x[1][1],x[1][2]))
+      for c,i in enumerate(l):
+        diff.append(np.linalg.norm(i[1] - r[c][1]))
+        keys_.append(self.atomindex.sanitize(i[0]) == self.atomindex.sanitize(r[c][0]))
       m = np.max(np.abs(diff))
       if m > 1e-3: return False
+      if False in keys_: return False
       diff = []
       for c,i in enumerate(self.lattice): 
         diff.append(np.linalg.norm(self.lattice[i] - other.lattice[i]))

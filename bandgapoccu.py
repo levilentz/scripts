@@ -18,6 +18,11 @@ class bg:
   
   def __call__ ( self,direct):
     self.get_bandgap(direct)
+
+  def __iter__(self):
+    yield 'gap', self.bg
+    yield 'cbm', self.cbm
+    yield 'vbm', self.vbm
   
   def get_bandgap(self,direct):
     self.occu = []
