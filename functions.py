@@ -176,14 +176,14 @@ def rotate_QE(x,theta,dir_='x'):
 def split_df(df,**kwargs):
   '''This will add a column to a dataframe and split it into train, val, and test datasets'''
   if not kwargs:
-    kwargs = **{'frac':0.80}
+    kwargs = {'frac':0.80}
   df['train'] = None
   train = df.sample(**kwargs)
   df.loc[train.index,'train'] = 'train'
   rem = df.drop(train.index)
   test = rem.sample(frac=0.50)
-  df.loc(test.index,'train') = 'test'
-  df.loc(rem.drop(test.index).index,'train') = 'val'
+  df.loc[test.index,'train'] = 'test'
+  df.loc[rem.drop(test.index).index,'train'] = 'val'
 
 def upf(stru):
   atom,cell = stru.return_params()
