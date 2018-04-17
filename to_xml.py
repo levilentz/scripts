@@ -46,9 +46,9 @@ def xml(f,extra_tag=None,p_=10):
     species.text = str(ntype)
     atoms.append(natoms)
     atoms.append(species)
-    for i in atm.split('\n')[:-1]: 
-      atom = ET.Element("atom",specie=i.split()[0])
-      atom.text = ' '.join(i.split()[1:4])
+    for j in atm.split('\n')[:-1]: 
+      atom = ET.Element("atom",specie=j.split()[0])
+      atom.text = ' '.join(j.split()[1:4])
       atoms.append(atom)
     system.append(atoms)
     target = ET.Element('target')
